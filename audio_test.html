@@ -1,0 +1,44 @@
+var before_audio = {
+  type: 'html-button-response',
+  stimulus: 'Click to start',
+  choices: ['OK']
+}
+
+var audio = null;
+
+var start_audio = {
+  type: 'call-function',
+  func: function(){
+    audio = new Audio();
+    audio.src = "drum-loop.mp3";
+    audio.loop = true;
+    audio.play();
+  }
+}
+
+var in_between_trials = {
+  timeline: [{
+    type: 'html-button-response',
+    stimulus: function(){
+      return `<p>Intermediate trial ${jsPsych.timelineVariable('number')} of 4</p>`
+    },
+    choices: ['Next']
+  }],
+  timeline_variables: [
+    {number: 1},
+    {number: 2},
+    {number: 3},
+    {number: 4}
+  ]
+}
+
+var stop_audio = {
+  type: 'call-function',
+  func: function(){
+    audio.pause();
+  }
+}
+
+jsPsych.init({
+  timeline: [before_audio, start_audio, in_between_trials, stop_audio]
+})

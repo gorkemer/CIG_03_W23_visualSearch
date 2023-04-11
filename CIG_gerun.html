@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <title>CIG</title>
+      <script src="../jspsych-6.3.1/jspsych.js"></script>
+      <script src="../jspsych-6.3.1/plugins/jspsych-html-keyboard-response.js"></script>
+      <script src="../jspsych-6.3.1/plugins/jspsych-categorize-image.js"></script>
+      <script src="../jspsych-6.3.1/plugins/jspsych-image-keyboard-response.js"></script>
+      <script src="../jspsych-6.3.1/plugins/jspsych-same-different-image.js"></script>
+      <script src="../jspsych-6.3.1/plugins/jspsych-fullscreen.js"></script>
+      <script src="../jspsych-6.3.1/plugins/jspsych-preload.js"></script>
+      <script src="jspsych-html-slider-response.js"></script>
+      <script src="jspsych-survey-text.js"></script>
+      <script src="jspsych-html-slider-response_original.js"></script>
+      <script src="jspsych-html-slider-response_8sliders.js"></script>
+      <script src="../jspsych-6.3.1/plugins/jspsych-image-button-response.js"></script>
+      <script src="../jspsych-6.3.1/plugins/jspsych-instructions.js"></script>
+      <script src="../jspsych-6.3.1/plugins/jspsych-audio-keyboard-response.js"></script>
+      <script src="../jspsych-6.0.5/plugins/jspsych-fullscreen.js"></script>
+      <script src="../jspsych-6.3.1/plugins/jspsych-call-function.js"></script>
+      <script src="faceTrials.js"></script>
+
+
+      <script src="jspsych-survey-likert.js"></script>
+      <script src="demoQ.js"></script>
+      
+      <script src="../jspsych-6.3.1/plugins/jspsych-survey-multi-choice.js"></script>
+      
+      <script src="vignettes.js"></script>
+            
+      <script src="vignettes_8sliders.js"></script>
+
+      <script src="../jspsych-6.0.5/plugins/jspsych-rdk.js"></script>
+      <script src="jspsych-rdkRedDot.js"></script>
+      <script src="../jspsych-6.0.5/plugins/jspsych-html-button-response.js"></script>
+      <script src="../jspsych-6.0.5/plugins/jspsych-fullscreen.js"></script>
+      <link href="../jspsych-6.0.5/css/jspsych.css" rel="stylesheet" type="text/css">
+
+      <script src="jquery.js"></script> 
+
+<!--       <object type="text/html" data="CIG_laughterStudy.html"></object> -->
+
+    </head>
+
+    <style>
+      .circle-container {
+              position: relative;
+              width: 24em;
+              height: 24em;
+              padding: 2.8em;
+              /*2.8em = 2em*1.4 (2em = half the width of a link with img, 1.4 = sqrt(2))*/
+              /*border: dashed 1px;*/
+              border-radius: 50%;
+              margin: 1.75em auto 0;
+          }
+          .circle-container a {
+              display: block;
+              position: absolute;
+              top: 50%; left: 50%;
+              width: 4em; height: 4em;
+              margin: -2em;
+          }
+          .circle-container img { display: block; width: 100%; }
+          .deg0 { transform: translate(12em); } /* 12em = half the width of the wrapper */
+          .deg45 { transform: rotate(45deg) translate(12em) rotate(-45deg); }
+          .deg90 { transform: rotate(90deg) translate(12em) rotate(-90deg); }
+          .deg135 { transform: rotate(135deg) translate(12em) rotate(-135deg); }
+          .deg180 { transform: translate(-12em); }
+          .deg225 { transform: rotate(225deg) translate(12em) rotate(-225deg); }
+          .deg270 { transform: rotate(270deg) translate(12em) rotate(-270deg); }
+          .deg315 { transform: rotate(315deg) translate(12em) rotate(-315deg); }
+  
+      </style>
+    <body></body>
+    <script>
+
+var timeline = []
+var questionOrder = 0 
+var sliderQuestions = 0
+var count = 0;
+var nTrials = 100 * 5 // 100 is for 100 images, 5 for 5 slider questions per an image.
+
+
+// change the color of the background and the text
+document.body.style.backgroundColor = 'white'//"#808080"
+document.body.style.color = 'black'
+
+
+var participantID = jsPsych.data.getURLVariable('ParticipantID');
+console.log('Participant ID is:', participantID);
+if (typeof participantID === "undefined") {
+alert("participant ID is undefined, assigning arbitrarily. ");
+var participantID = 1;
+}
+jsPsych.data.addProperties({participant_ID: participantID});
+
+
+function saveData() {
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', 'write_data.php'); // change 'write_data.php' to point to php script.
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onload = function() {
+    if(xhr.status == 200){
+      var response = JSON.parse(xhr.responseText);
+      console.log(response.success);
+    }
+  };
+  //xhr.send(jsPsych.data.get().json());
+  //xhr.send(jsPsych.data.get().json());
+  xhr.send(jsPsych.data.get().last(1).json());
+}
+
+
+/// randomize vignettes
+
+vignettes = jsPsych.randomization.repeat(vignettes, 1)
+//vignetteList = jsPsych.randomization.repeat(vignettes, 2)
+//QOrderList = jsPsych.randomization.repeat(vignetteList[0].Qs,1)
+
+
+var instructionText1 = {
+  type: 'html-button-response',
+  stimulus: "You will now begin a person perception task. In this task, you will complete multiple trials. First, you will be asked to read a brief description of a person. That is, you will read a paragraph in which a person describes themselves in a few short sentences. Next, you will be asked to answer various questions regarding your opinions of that person. You will be asked to do this multiple times. <br><br>",
+  trial_duration: null,
+  response_ends_trial: true,
+  choices: ['Continue']
+}
+
+var instructionText2 = {
+  type: 'html-button-response',
+  stimulus: "You will now proceed to the next part of the study in which you will be asked to make judgments of others. Importantly, the sound clip that you heard during the mental visualization portion of the study will continue to play throughout the remainder of the study. Please do not adjust your volume unless it is absolutely necessary. It is important that you are able to hear the sound clip throughout the study. Although the sound may be distracting, do your best to ignore it and focus on each judgment task.<br><br>",
+  trial_duration: null,
+  response_ends_trial: true,
+  choices: ['Continue']
+}
+
+var vignetteTrial = {
+  type: 'html-button-response',
+  stimulus: "",//'<p style="font-size:48px; color:red;">GREEN</p>',
+  trial_duration: null,//14000,
+  response_ends_trial: true,
+  choices: ['Continue'],
+  stimulus: function(){
+      return `
+      <div style = "width:700px;">
+          <p>${jsPsych.timelineVariable('Vignette', true)}</p>
+      </div>`},
+
+  on_finish: function(data){
+  data.textID = jsPsych.timelineVariable('textID')
+  var timestamp = (new Date).toISOString().replace(/z|t/gi,' ').trim();
+  jsPsych.data.addDataToLastTrial({timestamp});
+  saveData()
+  },
+
+};
+
+function randomIntFromInterval(min, max) { // min and max included 
+  return Math.floor(Math.random() * (max - min + 1) + min)
+}
+var randNumberId = randomIntFromInterval(1,3)
+console.log(randNumberId)
+if (randNumberId == 1){
+  audioType = 1
+}
+else if (randNumberId == 2){
+  audioType = 2 
+}
+else if (randNumberId == 3){
+  audioType = 3
+}
+
+jsPsych.data.addProperties({audio_type: audioType});
+
+var sliderTrial = {
+    type: 'html-slider-response',
+    stimulus: function(){
+      return `
+    <div style = "width:700px;">
+      <p> Please indicate your level of agreement with each of the following statements: </p>
+      <p>${jsPsych.timelineVariable('Qs', true)[0]}</p>
+    </div>`},
+    stimulus_2: function(){
+    return `
+    <div style = "width:700px;">
+        <p>${jsPsych.timelineVariable('Qs', true)[1]}</p>
+    </div>`},
+    stimulus_3: function(){
+    return `
+    <div style = "width:700px;">
+        <p>${jsPsych.timelineVariable('Qs', true)[2]}</p>
+    </div>`},
+    stimulus_4: function(){
+    return `
+    <div style = "width:700px;">
+        <p>${jsPsych.timelineVariable('Qs', true)[3]}</p>
+    </div>`},
+    stimulus_5: function(){
+    return `
+    <div style = "width:700px;">
+        <p>${jsPsych.timelineVariable('Qs', true)[4]}</p>
+    </div>`},
+    require_movement: true,
+    labels: function(){
+      return ["Completely Disagree", "Completely Agree"] //[`${jsPsych.timelineVariable('anchorMin_1', true)}`, '', `${jsPsych.timelineVariable('anchorMax_1', true)}`]
+    },
+    on_finish: function() {
+  },
+    slider_start: function(){
+    },
+    on_finish: function(data){
+      var timestamp = (new Date).toISOString().replace(/z|t/gi,' ').trim();
+      jsPsych.data.addDataToLastTrial({timestamp});
+      saveData()
+    }
+}
+
+
+var sliderTrial_8slider = {
+    type: 'html-slider-response_8sliders',
+    stimulus: function(){
+      return `
+    <div style = "width:700px;">
+      <p> ${jsPsych.timelineVariable('Vignette')}<br><br>Please give us your immediate impression.  </p>
+      <p> <br><br> ${jsPsych.timelineVariable('Qs', true)[0]}</p>
+    </div>`},
+    stimulus_2: function(){
+    return `
+    <div style = "width:700px;">
+        <p>${jsPsych.timelineVariable('Qs', true)[1]}</p>
+    </div>`},
+    stimulus_3: function(){
+    return `
+    <div style = "width:700px;">
+        <p>${jsPsych.timelineVariable('Qs', true)[2]}</p>
+    </div>`},
+    stimulus_4: function(){
+    return `
+    <div style = "width:700px;">
+        <p>${jsPsych.timelineVariable('Qs', true)[3]}</p>
+    </div>`},
+    stimulus_5: function(){
+    return `
+    <div style = "width:700px;">
+        <p>${jsPsych.timelineVariable('Qs', true)[4]}</p>
+    </div>`},
+    stimulus_6: function(){
+    return `
+    <div style = "width:700px;">
+        <p>${jsPsych.timelineVariable('Qs', true)[5]}</p>
+    </div>`},
+    stimulus_7: function(){
+    return `
+    <div style = "width:700px;">
+        <p>${jsPsych.timelineVariable('Qs', true)[6]}</p>
+    </div>`},
+    stimulus_8: function(){
+    return `
+    <div style = "width:700px;">
+        <p>${jsPsych.timelineVariable('Qs', true)[7]}</p>
+    </div>`},
+    require_movement: true,
+    labels: function(){
+      return ["Not at all", "Extremely"] //[`${jsPsych.timelineVariable('anchorMin_1', true)}`, '', `${jsPsych.timelineVariable('anchorMax_1', true)}`]
+    },
+    on_finish: function() {
+  },
+    slider_start: function(){
+    },
+    on_finish: function(data){
+
+
+      var timestamp = (new Date).toISOString().replace(/z|t/gi,' ').trim();
+      jsPsych.data.addDataToLastTrial({timestamp});
+      saveData()
+    }
+}
+
+
+var visualizationText = {
+  type: 'html-button-response',
+  stimulus: "In this study, we will test the effects of practicing mental visualization and distraction on the judgments we make of others. Thus, we will first need for you to practice your mental visualization skills. To practice your mental visualization, you will first hear a sound clip in the background. <br><br>Please try to imagine yourself in the environment of the sound clip. For example, you might think about what you would see or how you might feel in this type of environment. <br><br>You will be asked to mentally visualize this environment for approximately 1 minute. Following this the mental visualization task, you will be asked to make judgments of others. Please click next to begin the mental visualization task.",
+  trial_duration: null,
+  response_ends_trial: true,
+  choices: ['Continue']
+}
+var visualizationText2 = {
+  type: 'html-button-response',
+  stimulus: "<b> Mental visualization period has started... </b> <br> You will first hear a sound clip in the background. Please try to imagine yourself in the environment of the sound clip. For example, you might think about what you would see or how you might feel in this type of environment. We are kindly asking you to mentally visualize this environment for approximately 1 minute. <br><br> (screen will proceed after a minute) ",
+  trial_duration: 1000 * 60,
+  response_ends_trial: false,
+  choices: ['Continue']
+}
+
+var audio_trial = {
+    type: 'audio-keyboard-response',
+    stimulus: 'crowd-talking-1.mp3',
+    choices: ['e', 'i'],
+    prompt: "<p>Is the pitch high or low? Press 'e' for low and 'i' for high.</p>",
+    response_ends_trial: true,
+    on_finish: function(data){
+    var timestamp = (new Date).toISOString().replace(/z|t/gi,' ').trim();
+    jsPsych.data.addDataToLastTrial({timestamp});
+    saveData()
+    }
+};
+
+
+var before_audio = {
+  type: 'html-button-response',
+  stimulus: 'Click to start',
+  choices: ['OK']
+}
+
+var audio = null;
+
+var start_audio = {
+  type: 'call-function',
+  func: function(){
+    audio = new Audio();
+    if (audioType == 1){
+      audio.src = "crowd-talking-1.mp3";
+    }
+    else if (audioType == 2){
+      audio.src = "white-noise-02_1.mp3";
+    }
+    else {
+      audio.src = "Low_Density_1min_clip(3).mp3";
+    }
+    audio.loop = true;
+    audio.play();
+  }
+}
+
+var stop_audio = {
+  type: 'call-function',
+  func: function(){
+    audio.pause();
+  }
+}
+
+/////
+
+
+/////////////////
+
+//// POST-TEST QUESTION PLIUGINS ////
+var classicLikert = [
+  "Strongly disagree", 
+  "Disagree",
+  "Neutral",
+  "Agree",
+  "Strongly Agree"
+]
+
+
+const mainTrialList = {
+    timeline:[vignetteTrial, sliderTrial], //target_trial
+    timeline_variables: vignettes
+}
+
+const agencyExpLoop = {
+    timeline:[sliderTrial_8slider], //target_trial
+    timeline_variables: vignettes8sliders
+}
+
+
+audioLevelTrial = {
+    type: 'html-slider-response_original',
+    stimulus: function(){
+      return `
+    <div style = "width:700px;">
+      <p> Please indicate your computer/device's volume using the slider. </p>
+    </div>`},
+    on_finish: function(data){
+      var timestamp = (new Date).toISOString().replace(/z|t/gi,' ').trim();
+      jsPsych.data.addDataToLastTrial({timestamp});
+      saveData()
+    }
+}
+const postExpQ = {
+    timeline:[DemoQ1, DemoQ2, DemoQ3, DemoQ4, DemoQ5, DemoQ6, DemoQ7, DemoQ8, if_node, DemoQ10, DemoQ11, DemoQ12, DemoQ13, DemoQ14, DemoQ15, DemoQ16, DemoQ17, DemoQ18], //target_trial
+}
+
+var fullscreen_trial = {
+  type: 'fullscreen',
+  fullscreen_mode: true
+}
+
+/* timeline.push({
+  type: 'fullscreen',
+  fullscreen_mode: true
+}); */
+
+var enter_fullscreen = {
+  type: 'fullscreen',
+  fullscreen_mode: true
+}
+
+//let sona_id = jsPsych.data.urlVariables()['sona_id']
+
+var curvatureResponseTrial_practice = {
+    type: 'image-keyboard-response',
+    stimulus: 'magnitude_choice_original.jpg',
+    choices: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+    prompt: "<p>Please use numbers on the keyboard to select</p>"
+};
+
+var curvatureResponseTrial = {
+    type: 'image-keyboard-response',
+    stimulus: 'magnitude_choice_original.jpg',
+    choices: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+    prompt: "<p>Please use numbers on the keyboard to select</p>",
+    on_finish: function(data){
+      data.faceTrialID = jsPsych.timelineVariable('id')
+      var timestamp = (new Date).toISOString().replace(/z|t/gi,' ').trim();
+      jsPsych.data.addDataToLastTrial({timestamp});
+      saveData()
+    }
+};
+
+
+/* // START OF THE FACE SET // 
+curvatureResponseTrial = {
+    type: 'html-slider-response_original',
+    stimulus: function(){
+      return `
+    <div style = "width:700px;">
+      <p>  Every display contained either a happy or sad face please report the perceived intensity of the happy or sad expression.</p>
+      <br>
+      <img src="magnitude_choice_original.jpg" style="width:100%; height:100%">
+    </div>`},
+    labels: ['downward curve / sad', 'middle', 'upward curve / happy'],
+    step: 1,
+    min: 1,
+    max: 10,
+    on_finish: function(data){
+      data.faceTrialID = jsPsych.timelineVariable('id')
+      var timestamp = (new Date).toISOString().replace(/z|t/gi,' ').trim();
+      jsPsych.data.addDataToLastTrial({timestamp});
+      saveData()
+    }
+} */
+
+var preloadedImages = ["singleFace_empty.jpg", "singleFace_neutral.jpg", "singleFace_sad.jpg", "singleFace_happy.jpg", "fixation.jpg", "magnitude_choice_original.jpg"]
+
+var preload = {
+    type: 'preload',
+    auto_preload: true, // automatically load all files based on the main timeline
+    images: preloadedImages // to preload manually
+};
+
+faceTrials = jsPsych.randomization.repeat(faceTrials, 15) // 15 x 6 = 90 trials
+
+var test_trial = {
+  type: 'html-keyboard-response',
+    stimulus: function() {
+
+    return `
+    <div class='circle-container'>
+        <a href='#' class='center'><img src='fixation.jpg'></a>
+        <a href='#' class='deg0'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[0]}.jpg'></a>
+        <a href='#' class='deg45'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[1]}.jpg'></a>
+        <a href='#' class='deg90'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[2]}.jpg'></a>
+        <a href='#' class='deg135'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[3]}.jpg'></a>
+        <a href='#' class='deg180'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[4]}.jpg'></a>
+        <a href='#' class='deg225'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[5]}.jpg'></a>
+        <a href='#' class='deg270'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[6]}.jpg'></a>
+        <a href='#' class='deg315'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[7]}.jpg'></a>
+    </div>`},
+    choices: ['g'],
+    response_ends_trial: false,
+    trial_duration: 100,
+    on_finish: function(data){
+      var timestamp = (new Date).toISOString().replace(/z|t/gi,' ').trim();
+      jsPsych.data.addDataToLastTrial({timestamp});
+      //saveData()
+    }
+};
+
+var test_trial_practice = {
+  type: 'html-keyboard-response',
+    stimulus: function() {
+
+    return `
+    <div class='circle-container'>
+        <a href='#' class='center'><img src='fixation.jpg'></a>
+        <a href='#' class='deg0'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[0]}.jpg'></a>
+        <a href='#' class='deg45'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[1]}.jpg'></a>
+        <a href='#' class='deg90'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[2]}.jpg'></a>
+        <a href='#' class='deg135'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[3]}.jpg'></a>
+        <a href='#' class='deg180'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[4]}.jpg'></a>
+        <a href='#' class='deg225'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[5]}.jpg'></a>
+        <a href='#' class='deg270'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[6]}.jpg'></a>
+        <a href='#' class='deg315'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[7]}.jpg'></a>
+    </div>`},
+    choices: ['g'],
+    response_ends_trial: false,
+    trial_duration: 500,
+};
+
+var test_trial_practice_fast = {
+  type: 'html-keyboard-response',
+    stimulus: function() {
+    return `
+    <div class='circle-container'>
+        <a href='#' class='center'><img src='fixation.jpg'></a>
+        <a href='#' class='deg0'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[0]}.jpg'></a>
+        <a href='#' class='deg45'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[1]}.jpg'></a>
+        <a href='#' class='deg90'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[2]}.jpg'></a>
+        <a href='#' class='deg135'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[3]}.jpg'></a>
+        <a href='#' class='deg180'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[4]}.jpg'></a>
+        <a href='#' class='deg225'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[5]}.jpg'></a>
+        <a href='#' class='deg270'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[6]}.jpg'></a>
+        <a href='#' class='deg315'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[7]}.jpg'></a>
+    </div>`},
+    choices: ['g'],
+    response_ends_trial: false,
+    trial_duration: 100,
+};
+
+var blank_trial = {
+  type: 'html-keyboard-response',
+    stimulus: function() {
+    return `
+    <div class='circle-container'>
+        <a href='#' class='center'><img src='fixation.jpg'></a>
+    </div>`},
+    choices: ['g'],
+    response_ends_trial: false,
+    trial_duration: 500
+};
+
+var faceInstructions_1 = {
+    type: 'instructions',
+    pages: [
+        '<p>Now you will complete a visual experiment for a few more minutes.</p>'+
+        '<p>On each trial you will see a fixation point for 1 second, please focus your attention on that point. Like the one below. <p>'+
+        '<br>'+
+        '<img src="fixation.jpg"></img>',
+        '<p> Next, you will see either a <b>single face</b> or <b>group of faces</b> for a very brief duration (shorter than half of a second). Like the below: </p> <br>' + 
+          '<p> For example, this is a <b>happy</b> face (mouth has a <b>upward</b> curvature): </p> <br>' + '<img src="singleFace_happy.jpg"></img> <br>' +
+            '<p> <b>Sad</b> face (mouth has a <b>downward</b> curvature): </p> <br>'  + '<img src="singleFace_sad.jpg"></img> <br>' +
+          '<p> <b>Neutral</b> face: </p> <br>' + '<img src="singleFace_neutral.jpg"></img>' + '<br><br><br>',
+        '<p> And, here is how a trial with a group of faces look like:'+ 
+          `
+          <div class='circle-container'>
+              <a href='#' class='center'><img src='fixation.jpg'></a>
+              <a href='#' class='deg0'><img src='singleFace_neutral.jpg'></a>
+              <a href='#' class='deg45'><img src='singleFace_sad.jpg'></a>
+              <a href='#' class='deg90'><img src='singleFace_neutral.jpg'></a>
+              <a href='#' class='deg135'><img src='singleFace_neutral.jpg'></a>
+              <a href='#' class='deg180'><img src='singleFace_neutral.jpg'></a>
+              <a href='#' class='deg225'><img src='singleFace_neutral.jpg'></a>
+              <a href='#' class='deg270'><img src='singleFace_neutral.jpg'></a>
+              <a href='#' class='deg315'><img src='singleFace_neutral.jpg'></a>
+          </div>`+
+          '<br><br><p> As seen above, you will always see <b>8 faces</b> in total and <b>7 of them</b> will always be a <b>neutral face</b>. And the 8th one will be your target face (emotional face). <br><br>You are asked to respond to the curvature of the mouth of the <b>emotional face</b> (happy or sad). You will know which one will it be. </p>',
+
+        '<p> On each trial you will be asked to judge the curvature of the emotional face by pressing a number on your keyboard. <br><br>Here is the response scale for each curvature and its associated number. You are asked to use your keyboard to respond. For responding "10" please use the key "0" (zero). </p> <br><br><br>' + 
+          '<img src="magnitude_choice_original.jpg"></img> <br>'
+    ],
+    show_clickable_nav: true
+}
+
+
+
+var faceTrials_practice = [
+  {
+    "id": "7_neutral_1_sad",
+    "faceList": ["neutral", "neutral", "neutral", "neutral", "sad", "neutral", "neutral", "neutral"],
+  },
+  {
+    "id": "single_happy",
+    "faceList": ["empty", "empty", "empty", "empty", "happy", "empty", "empty", "empty"],
+  },
+  {
+    "id": "single_sad",
+    "faceList": ["empty", "empty", "sad", "empty", "empty", "empty", "empty", "empty"],
+  },
+  {
+    "id": "single_neutral",
+    "faceList": ["empty", "empty", "empty", "empty", "empty", "empty", "neutral", "empty"],
+  }
+]
+faceTrials_practice = jsPsych.randomization.repeat(faceTrials_practice, 1)
+
+const face_practice = {
+    timeline:[blank_trial, test_trial_practice, blank_trial, curvatureResponseTrial_practice], //target_trial
+    timeline_variables: faceTrials_practice
+}
+
+var faceInstructions_2 = {
+    type: 'instructions',
+    pages: [
+        '<p> To sum up, In trials where you see a single face you are asked to judge that face, when you see a group of faces, you are asked to report the perceived intensity/curvature-of-the-mouth of the emotional expression. </p>',
+        '<p>Now you understand the basics of it. <br> Now it&rsquo;s time for you to do some practice trials.</p>'
+    ],
+    show_clickable_nav: true
+}
+
+var faceInstructions_3 = {
+    type: 'instructions',
+    pages: [
+        '<p>Now you understand the basics of it. I&rsquo;m going to show you what the real trial looks like. Hey, remember, the following ones will still be practice but now it is going to go much faster.</p>'
+    ],
+    show_clickable_nav: true
+}
+
+var faceTrials_practice = [
+  {
+  "id": "7_neutral_1_happy",
+  "faceList": ["happy", "neutral", "neutral", "neutral", "neutral", "neutral", "neutral", "neutral"],
+  },
+  {
+    "id": "7_neutral_1_sad",
+    "faceList": ["sad", "neutral", "neutral", "neutral", "neutral", "neutral", "neutral", "neutral"],
+  },
+  {
+    "id": "7_neutral_1_neutral",
+    "faceList": ["sad", "neutral", "neutral", "neutral", "neutral", "neutral", "neutral", "neutral"],
+  },
+  {
+    "id": "single_happy",
+    "faceList": ["happy", "empty", "empty", "empty", "empty", "empty", "empty", "empty"],
+  },
+  {
+    "id": "single_sad",
+    "faceList": ["sad", "empty", "empty", "empty", "empty", "empty", "empty", "empty"],
+  },
+  {
+    "id": "single_neutral",
+    "faceList": ["neutral", "empty", "empty", "empty", "empty", "empty", "empty", "empty"],
+  }
+]
+
+faceTrials_practice = jsPsych.randomization.repeat(faceTrials_practice, 1)
+const face_practice_fast = {
+    timeline:[blank_trial, test_trial_practice_fast, blank_trial, curvatureResponseTrial_practice], //target_trial
+    timeline_variables: faceTrials_practice
+}
+
+var faceInstructions_4 = {
+    type: 'instructions',
+    pages: [
+        '<p>Please don&rsquo;t think about whether you&rsquo;re correct or incorrect. All we care about is that you tell us what you see. That&rsquo;s all that matters. So, as long as you tell us what you see, or as long as you give us your best guess, then you&rsquo;ll have done a good job.</p>' +
+        '<p> '
+    ],
+    show_clickable_nav: true
+}
+var practiceEndText = {
+    type: 'instructions',
+    pages: [
+        '<p>Alright, you&rsquo;re definitely ready to move on to the game.</p>'+
+      '<p>You&rsquo;re going to run in the real game now. It should take about a few minutes. There will be many more trials than the practice session you just did, so please do your best to pay attention the whole time, okay? </p>'+ 
+    '<p>When you&rsquo;re ready, go ahead and get started.</p>'],
+    show_clickable_nav: true
+}
+const practiceProc = {
+    timeline:[faceInstructions_1, faceInstructions_2, face_practice, faceInstructions_3, face_practice_fast, faceInstructions_4, practiceEndText], //target_trial
+}
+
+
+// END OF PRACTICE STUFF // 
+const faceTrialProc = {
+    timeline:[blank_trial, test_trial, blank_trial, curvatureResponseTrial], //target_trial
+    timeline_variables: faceTrials
+}
+
+jsPsych.init({
+    timeline: [enter_fullscreen, practiceProc, faceTrialProc, stop_audio, postExpQ, debrief], // postExpQ, //fullscreen_trial, mainTrialList, postTestQProcedure
+    default_iti: 500,
+    show_progress_bar: false,
+    auto_update_progress_bar: false,
+    message_progress_bar: 'Completion Progress',
+});
+
+
+//Now think about the short description you read of the person who described themselves as a [librarian] (bold text, appears randomly). Compared to the average person, to what extent do you think they are capable of each of the following: 
+
+//Please give us your immediate impression and be as honest as possible.  
+
+</script>
+</html>
+
+
