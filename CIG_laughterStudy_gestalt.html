@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <title>CIG</title>
+      <script src="../jspsych-6.3.1/jspsych.js"></script>
+      <script src="../jspsych-6.3.1/plugins/jspsych-html-keyboard-response.js"></script>
+      <script src="../jspsych-6.3.1/plugins/jspsych-categorize-image.js"></script>
+      <script src="../jspsych-6.3.1/plugins/jspsych-image-keyboard-response.js"></script>
+      <script src="../jspsych-6.3.1/plugins/jspsych-same-different-image.js"></script>
+      <script src="../jspsych-6.3.1/plugins/jspsych-fullscreen.js"></script>
+      <script src="../jspsych-6.3.1/plugins/jspsych-preload.js"></script>
+      <script src="jspsych-html-slider-response.js"></script>
+      <script src="jspsych-survey-text.js"></script>
+      <script src="jspsych-html-slider-response_original.js"></script>
+      <script src="jspsych-html-slider-response_8sliders.js"></script>
+      <script src="../jspsych-6.3.1/plugins/jspsych-image-button-response.js"></script>
+      <script src="../jspsych-6.3.1/plugins/jspsych-instructions.js"></script>
+      <script src="../jspsych-6.3.1/plugins/jspsych-audio-keyboard-response.js"></script>
+      <script src="../jspsych-6.0.5/plugins/jspsych-fullscreen.js"></script>
+      <script src="../jspsych-6.3.1/plugins/jspsych-call-function.js"></script>
+      <script src="jspsych-ydk.js"></script>
+      <script src="jspsych-rdk_2.js"></script>
+
+      <script src="jspsych-survey-likert.js"></script>
+      <script src="demoQ.js"></script>
+      
+      <script src="../jspsych-6.3.1/plugins/jspsych-survey-multi-choice.js"></script>
+      
+      <script src="faceTrials.js"></script>
+            
+      <script src="vignettes_8sliders.js"></script>
+
+      <script src="../jspsych-6.0.5/plugins/jspsych-rdk.js"></script>
+      <script src="jspsych-rdkRedDot.js"></script>
+      <script src="../jspsych-6.0.5/plugins/jspsych-html-button-response.js"></script>
+      
+        <script src="../jspsych-6.0.5/plugins/jspsych-fullscreen.js"></script>
+        
+        <link href="../jspsych-6.0.5/css/jspsych.css" rel="stylesheet" type="text/css">
+    </head>
+    <style>
+    .circle-container {
+            position: relative;
+            width: 24em;
+            height: 24em;
+            padding: 2.8em;
+            /*2.8em = 2em*1.4 (2em = half the width of a link with img, 1.4 = sqrt(2))*/
+            /*border: dashed 1px;*/
+            border-radius: 50%;
+            margin: 1.75em auto 0;
+        }
+        .circle-container a {
+            display: block;
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 4em; height: 4em;
+            margin: -2em;
+        }
+        .circle-container img { display: block; width: 100%; }
+        .deg0 { transform: translate(12em); } /* 12em = half the width of the wrapper */
+        .deg45 { transform: rotate(45deg) translate(12em) rotate(-45deg); }
+        .deg90 { transform: rotate(90deg) translate(12em) rotate(-90deg); }
+        .deg135 { transform: rotate(135deg) translate(12em) rotate(-135deg); }
+        .deg180 { transform: translate(-12em); }
+        .deg225 { transform: rotate(225deg) translate(12em) rotate(-225deg); }
+        .deg270 { transform: rotate(270deg) translate(12em) rotate(-270deg); }
+        .deg315 { transform: rotate(315deg) translate(12em) rotate(-315deg); }
+
+    
+    .fixation {font-size: 45px; font-weight: bold; color: rgb(0, 0, 0);}
+
+    </style>
+    <body></body>
+    <script>
+
+var timeline = []
+var questionOrder = 0 
+var sliderQuestions = 0
+var count = 0;
+var nTrials = 100 * 5 // 100 is for 100 images, 5 for 5 slider questions per an image.
+
+var participantID = jsPsych.data.getURLVariable('ParticipantID');
+console.log('Participant ID is:', participantID);
+if (typeof participantID === "undefined") {
+alert("participant ID is undefined, assigning arbitrarily. ");
+var participantID = 1;
+}
+jsPsych.data.addProperties({participant_ID: participantID});
+
+
+function saveData() {
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', 'write_data.php'); // change 'write_data.php' to point to php script.
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onload = function() {
+    if(xhr.status == 200){
+      var response = JSON.parse(xhr.responseText);
+      console.log(response.success);
+    }
+  };
+  //xhr.send(jsPsych.data.get().json());
+  //xhr.send(jsPsych.data.get().json());
+  xhr.send(jsPsych.data.get().last(1).json());
+}
+
+// change the color of the background and the text
+document.body.style.backgroundColor = 'white'//"#808080"
+document.body.style.color = 'black'
+
+// START OF THE FACE SET // 
+curvatureResponseTrial = {
+    type: 'html-slider-response_original',
+    stimulus: function(){
+      return `
+    <div style = "width:540px;">
+      <p>  Every display contained either a happy or sad face please report the perceived intensity of the happy or sad expression.</p>
+      <br>
+      <img src="magnitude_choice.jpg" style="100%; height:100%">
+    </div>`},
+    labels: ['', '', ''], //['downward curve / sad', 'middle', 'upward curve / happy']
+    step: 0.5,
+    min: 1,
+    max: 10,
+    on_finish: function(data){
+      data.faceTrialID = jsPsych.timelineVariable('id')
+      var timestamp = (new Date).toISOString().replace(/z|t/gi,' ').trim();
+      jsPsych.data.addDataToLastTrial({timestamp});
+      saveData()
+    }
+}
+var preloadedImages = ["singleFace_empty.jpg", "singleFace_neutral.jpg", "singleFace_sad.jpg", "singleFace_happy.jpg", "fixation.jpg", "magnitude_choice.jpg"]
+
+var preload = {
+    type: 'preload',
+    auto_preload: true, // automatically load all files based on the main timeline
+    images: preloadedImages // to preload manually
+};
+
+
+var test_trial = {
+  type: 'html-keyboard-response',
+    stimulus: function() {
+    return `
+    <div class='circle-container'>
+        <a href='#' class='center'><img src='fixation.jpg'></a>
+        <a href='#' class='deg0'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[0]}_GG.png'></a>
+        <a href='#' class='deg45'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[1]}_GG.png'></a>
+        <a href='#' class='deg90'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[2]}_GG.png'></a>
+        <a href='#' class='deg135'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[3]}_GG.png'></a>
+        <a href='#' class='deg180'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[4]}_GG.png'></a>
+        <a href='#' class='deg225'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[5]}_GG.png'></a>
+        <a href='#' class='deg270'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[6]}_GG.png'></a>
+        <a href='#' class='deg315'><img src='singleFace_${jsPsych.timelineVariable('faceList', true)[7]}_GG.png'></a>
+    </div>`},
+    choices: ['Space', 'g', 'n'],
+    response_ends_trial: true,
+    trial_duration: null,
+    on_finish: function(data){
+      data.faceTrialID = jsPsych.timelineVariable('id')
+      var timestamp = (new Date).toISOString().replace(/z|t/gi,' ').trim();
+      jsPsych.data.addDataToLastTrial({timestamp});
+      if (data.faceTrialID == "sad_7N" | data.faceTrialID == "sad_7N" ) {
+        data.targetLoc = jsPsych.timelineVariable('faceList').indexOf('sad')
+      }
+      else if (data.faceTrialID == "happy_7N" | data.faceTrialID == "happy_single") {
+        data.targetLoc = jsPsych.timelineVariable('faceList').indexOf('happy')
+      }
+      else {
+        data.targetLoc = jsPsych.timelineVariable('faceList').indexOf('neutral')
+      }
+      data.stimArray = jsPsych.timelineVariable('faceList').toString();
+
+      saveData()
+    }
+};
+
+var blank_trial = {
+  type: 'html-keyboard-response',
+    stimulus: function() {
+    return `
+    <div class='circle-container'>
+        <a href='#' class='center'><img src='fixation.jpg'></a>
+    </div>`},
+    choices: ['g'],
+    response_ends_trial: false,
+    trial_duration: 500
+};
+
+
+var fixation = {
+    type: 'html-keyboard-response',
+    stimulus: '+',
+    choices: "NO_KEYS",
+    trial_duration: 500,
+    css_classes: ['fixation']
+}
+
+const faceTrialProc = {
+    timeline:[blank_trial, test_trial ], // curvatureResponseTrial  target_trial
+    timeline_variables: faceTrials
+}
+
+/* Welcome....
+In this task, you will be viewing cartoon faces.
+Sometimes you'll see one face on the screen. Sometimes you'll see eight faces on the screen.
+You task will be to indicate, on each trial, whether an emotional face is present on the screen.
+If a single face is on the screen, it might be sad, happy, or neutral. [add the image]
+If eight faces are on the screen, at least seven of them will have neutral expressions.
+The eight face may have a happy expression, a sad expression, or a neutral expression.
+On each trial, your task is simply to indicate whether an emotional face is present.
+If an emotional face is present anywhere on the screen, press the 'f' button.
+If an emotional face is NOT present, press the 'j' button. 
+Please respond as quickly as possible. 
+However, keep in mind that accuracy is important, too. 
+Thanks bozo!
+ */
+
+
+
+
+
+// END  OF THE FACE SET // 
+var introText = {
+type: "instructions",
+  pages: function(){
+    return [
+  `<p>Welcome to our visual search task! <br><br>You will be presented with cartoon faces. <br><br> Sometimes....you will see them  and your task is to detect emotional faces by pressing the 'g' key on your keyboard as quickly as possible. Emotional faces can be either happy or sad for the group faces. Further details regarding group versus single face trials will be displayed on the next screen.</p>`,
+  `<p>Here are some of the examples: 
+    <br><br>
+    <figure>
+    <img src="singleFace_happy.jpg">    <img src="singleFace_neutral.jpg">    <img src="singleFace_sad.jpg">
+    <figcaption>>>><br> <i>happy</i> | <i>neutral</i> | <i>sad</i></figcaption>
+    </figure>
+    </p>`,
+    `<p>Half of the times you will see a crowd of faces composed of at least 7 neutral faces (7/8). In those trials, we are asking you to detect an emotional face. Please press the 'g' key when you see an emotional face (happy or sad). <br><br>Here is one example of a crowd you might see:</p>
+    <div class='circle-container'>
+      <a href='#' class='center'><img src='fixation.jpg'></a>
+      <a href='#' class='deg0'><img src='singleFace_neutral.jpg'></a>
+      <a href='#' class='deg45'><img src='singleFace_sad.jpg'></a>
+      <a href='#' class='deg90'><img src='singleFace_neutral.jpg'></a>
+      <a href='#' class='deg135'><img src='singleFace_neutral.jpg'></a>
+      <a href='#' class='deg180'><img src='singleFace_neutral.jpg'></a>
+      <a href='#' class='deg225'><img src='singleFace_neutral.jpg'></a>
+      <a href='#' class='deg270'><img src='singleFace_neutral.jpg'></a>
+      <a href='#' class='deg315'><img src='singleFace_neutral.jpg'></a>
+    </div><p>Here we see a 1 <i>sad</i> among 7 neutral faces. There will be at least 7 neutral faces in these group-face trials. </p>`,
+`<p>In the <i>other<i/>half of the trials, you will be presented with a single face on the screen, and in those cases, your task would be to detect the presence of a face, not necessarily an emotional one. Simply press the key 'g' as soon as you see the single face. <br><br>For the crowd trials, we kindly ask you to press the 'g' button on your keyboard as fast as you can when you see an emotional face in a crowd of faces. In some crowd trials you might not see an emotional face at all. In those situations, please press 'n'. <br><br>Recap: Please press 'g' when you detect an emotional face in a crowd of faces. Please press 'n' if there is <b>no</b> emotional face please press 'n'. <br><br>For all single faces, you can keep pressing 'g'. <br><br>This task should only take about 5 minutes of your time. Thank you for participating!</p>`]}, 
+    show_clickable_nav:true
+}; 
+//            <img src="magnitude_choice.jpg" style="100%; height:100%">
+
+var endText_scale = {
+type: "html-slider-response_original",
+      stimulus: function(){
+            return `
+          <div style = "width:540px;">
+            <p> The experiment is over. Thank you for your time! Last question: Do you think you detected the happy face faster than a sad face? Press y for yes and o for no.</p>
+            <br>
+          </div>`}, 
+  show_clickable_nav:false,
+  response_ends_trial: true,
+  trial_duration: null,
+  on_finish: function(data){
+      var timestamp = (new Date).toISOString().replace(/z|t/gi,' ').trim();
+      jsPsych.data.addDataToLastTrial({timestamp});
+    }
+}; 
+
+
+var endText = {
+  type: 'html-keyboard-response',
+    stimulus: function() {
+    return `
+          <div style = "width:540px;">
+            <p> The experiment is over. Thank you for your time! Last question: Do you think you detected the happy face faster than a sad face? Press y for yes and o for no.</p>
+            <br>
+          </div>`},
+    choices: ['y', 'o'],
+    response_ends_trial: true,
+    trial_duration: null,
+    on_finish: function(data){
+      var timestamp = (new Date).toISOString().replace(/z|t/gi,' ').trim();
+      jsPsych.data.addDataToLastTrial({timestamp});
+      saveData()
+    }
+};
+
+var endText_confidence = {
+type: "html-slider-response_original",
+      stimulus: function(){
+            return `
+          <div style = "width:540px;">
+            <p> And how confident you are about with your answer?</p>
+            <br>
+          </div>`}, 
+  show_clickable_nav:false,
+  response_ends_trial: true,
+  trial_duration: null,
+  labels: ['I have no idea', 'Very Confident'],
+  on_finish: function(data){
+      var timestamp = (new Date).toISOString().replace(/z|t/gi,' ').trim();
+      jsPsych.data.addDataToLastTrial({timestamp});
+      saveData()
+    }
+}; 
+
+var searchInstructions = {
+    type: 'instructions',
+    pages: [
+        '<p></p>'+
+        '<p> You will see either a <b>single face</b> or <b>group of faces</b> for a very long duration. Like the below: </p> <br>' + 
+          '<p> For example, this is a <b>happy</b> face (mouth has a <b>upward</b> curvature): </p> <br>' + '<img src="singleFace_happy.jpg"></img> <br>' +
+            '<p> <b>Sad</b> face (mouth has a <b>downward</b> curvature): </p> <br>'  + '<img src="singleFace_sad.jpg"></img> <br>' +
+          '<p> <b>Neutral</b> face: </p> <br>' + '<img src="singleFace_neutral.jpg"></img>' + '<br><br><br>',
+        '<p> And, here is how a trial with a group of faces look like:'+ 
+          `
+          <div class='circle-container'>
+              <a href='#' class='center'><img src='fixation.jpg'></a>
+              <a href='#' class='deg0'><img src='singleFace_neutral.jpg'></a>
+              <a href='#' class='deg45'><img src='singleFace_sad.jpg'></a>
+              <a href='#' class='deg90'><img src='singleFace_neutral.jpg'></a>
+              <a href='#' class='deg135'><img src='singleFace_neutral.jpg'></a>
+              <a href='#' class='deg180'><img src='singleFace_neutral.jpg'></a>
+              <a href='#' class='deg225'><img src='singleFace_neutral.jpg'></a>
+              <a href='#' class='deg270'><img src='singleFace_neutral.jpg'></a>
+              <a href='#' class='deg315'><img src='singleFace_neutral.jpg'></a>
+          </div>`
+    ],
+    show_clickable_nav: true
+}
+
+var fullscreen_trial = {
+  type: 'fullscreen',
+  fullscreen_mode: true
+}
+
+jsPsych.init({
+    timeline: [fullscreen_trial, preload, introText, faceTrialProc, endText, endText_confidence], //
+    default_iti: 500,
+    show_progress_bar: false,
+    auto_update_progress_bar: false,
+    message_progress_bar: 'Completion Progress',
+});
+
+
+
+</script>
+</html>
+
+

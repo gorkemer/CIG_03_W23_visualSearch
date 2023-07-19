@@ -9,7 +9,7 @@ var faceTrials = [
   },
   {
     "id": "neutral_7N", // 7_neutral_1_neutral
-    "faceList": ["sad", "neutral", "neutral", "neutral", "neutral", "neutral", "neutral", "neutral"],
+    "faceList": ["neutral", "neutral", "neutral", "neutral", "neutral", "neutral", "neutral", "neutral"],
   },
   {
     "id": "happy_single", // single_happy
@@ -25,12 +25,43 @@ var faceTrials = [
   }
 ]
 
+faceTrials = jsPsych.randomization.repeat(faceTrials, 25) // 1 set is 6 in length. 6 x 10 = 60 trials
 
-faceTrials[0]["faceList"] = jsPsych.randomization.repeat(faceTrials[0].faceList,1)
-console.log("GORKI:", faceTrials[0]["faceList"])
-faceTrials[1]["faceList"] = jsPsych.randomization.repeat(faceTrials[1].faceList,1)
-faceTrials[2]["faceList"] = jsPsych.randomization.repeat(faceTrials[2].faceList,1)
-faceTrials[3]["faceList"] = jsPsych.randomization.repeat(faceTrials[3].faceList,1)
-faceTrials[4]["faceList"] = jsPsych.randomization.repeat(faceTrials[4].faceList,1)
-faceTrials[5]["faceList"] = jsPsych.randomization.repeat(faceTrials[5].faceList,1)
 
+function shuffle(array) {
+  let currentIndex = array.length,  randomIndex;
+
+  // While there remain elements to shuffle.
+  while (currentIndex != 0) {
+
+    // Pick a remaining element.
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // And swap it with the current element.
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex], array[currentIndex]];
+  }
+
+  return array;
+}
+
+var keyList = []
+var valueList = []
+for (let i = 0; i < 120; i++) {
+  test = faceTrials[i]
+  console.log(test.faceList)
+  console.log(jsPsych.randomization.repeat(test.faceList, 1))
+  test.faceList = jsPsych.randomization.repeat(test.faceList, 1)
+  console.log("new:",test.faceList)
+}
+//var result = {};
+
+//testResult = Object.assign(...keyList.map((k, i) => ({[k]: valueList[i]})))
+//keyList.forEach((key, i) => result[key] = valueList[i]);
+
+////const result = arrayTwo.map((element, index) => arrayOne[index].selected ? arrayOne[index].color : element);
+
+//console.log(result);
+//var newFaceList = faceTrials.map((obj, i) => ({ ...obj, faceList: flist[i] }));
+////newFaceList = faceTrials.map((obj, i) => ({ ...obj, id: idlist[i] }));
